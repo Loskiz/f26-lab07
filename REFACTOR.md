@@ -170,9 +170,8 @@ coverage, code age, spec quality, and reach). Be concrete about this codebase.
 
 ## Milestone 3: The missing pattern
 
-Read `pricing/`. Not coded, one sentence.
+**The pattern.** Strategy would let `PriceCalculator` use interchangeable
+pricing policies when alternative pricing algorithms need to vary independently.
 
-**The pattern.** Which one fits `PriceCalculator`, and the problem that makes
-it fit. Name the problem.
-
-**Would you apply it today?** Yes or no, one line, with the reason.
+**Would you apply it today?** No, because `PriceCalculator` is still small and
+does not contain multiple alternative strategies.
