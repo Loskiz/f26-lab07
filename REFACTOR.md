@@ -22,7 +22,7 @@ adds exactly two cancellation notifications in occurrence order, one for each
 newly cancelled occurrence; another series remains active. Before any production
 change, `mvn -B test` passed all 55 tests: the shipped 35 plus 20 characterization
 cases. No existing test method or production file was edited. This test file and
-pin section are the checkpoint committed and pushed before the refactor.
+pin section were committed and pushed as `82032b6` before the refactor.
 
 Additional tests in the same file pin the boundary cases requested in the
 directive:
@@ -96,19 +96,49 @@ including behavior that differs from regular bookings.
 
 ### The result
 
-**The diff and the suite.** How you are showing the diff to the TA (a commit,
-`git diff`, a branch), and the totals line (the shipped count plus your pin,
-all green).
+**The diff and the suite.** The directive checkpoint is `e50ca32`; the
+characterization checkpoint is `82032b6`, with production code unchanged. Show
+the refactor with `git diff 82032b6..HEAD -- src/main/java/edu/cmu/cs214/scheduling/workflow`.
+After extraction, `mvn -B clean test` rebuilt everything and reported:
 
-**What did NOT change: behavior and files.** The observable behavior you
-checked is still the same, including anything that surprised you while reading.
-Which files outside the scope are untouched, and how you verified that rather
-than assumed it. If the agent reached outside the directive, say where and what
-you did about it.
+```text
+Tests run: 55, Failures: 0, Errors: 0, Skipped: 0
+BUILD SUCCESS
+```
 
-**One thing the agent changed that you had to look at twice.** Something you
-checked line by line before accepting. If there was nothing, say how carefully
-you read the diff.
+`BookingWorkflow` now delegates all four operations through one fixed map of
+booking types to package-private `RegularBookingHandler`,
+`RecurringBookingHandler`, and `BlockedBookingHandler`. Its size went from 296
+to 91 lines. `BookingHandler` contains reused member/capacity validation, strict
+overlap checks, notification publication, recipient fallback, and slot
+description methods. `BookingWorkflow.roomName` removes the repeated room-name
+fallback. No type switches remain anywhere in `workflow/`.
+
+**What did NOT change: behavior and files.** All 35 shipped tests and the 20
+characterization cases remain green. Recurring bookings still conflict at
+touching endpoints, book only available weeks without renumbering them, allow
+cross-room member conflicts, cancel forward within their own series, and price
+all active occurrences even when queried through a cancelled occurrence.
+Rejection messages and precedence, booking and series ID consumption, and the
+tested notification text and order are preserved. The constructor and four
+public method signatures remain unchanged.
+
+The agent compared every test file byte for byte with `82032b6`, including the
+new characterization file; all five are unchanged during the refactor. It also
+compared every tracked file outside the production workflow package and
+`REFACTOR.md` with that checkpoint. `domain/`, `notify/`, `pricing/`,
+`reporting/`, the build configuration, and other tracked files are unchanged.
+Milestones 2 and 3 were not edited. Production changes stayed within the recorded
+scope; `git diff --check` passed.
+
+**One thing the agent changed that needs careful review.** Extracting the room
+conflict checks could accidentally make every type use the same endpoint rule.
+The agent compared the original conditions with both extracted methods:
+`BookingHandler.overlaps` retains strict `<` comparisons for regular bookings
+and blocks, while `RecurringBookingHandler.roomHasRecurringConflict` retains
+both `<=` comparisons. The endpoint and gap tests pass against both versions.
+The recurring cancellation loop also retains the timestamp cutoff and skips
+already cancelled occurrences; notifications still follow each state change.
 
 ### The closing explanation
 
