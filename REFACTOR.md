@@ -152,42 +152,19 @@ coverage, code age, spec quality, and reach). Be concrete about this codebase.
 
 ## Milestone 2: The pattern critique
 
-Read `notify/`. It works and the outbox tests pass.
-
 ### The patterns present
 
-List every design pattern you can name in that package. For each one, the class
-or classes that carry it.
-
-### The problem each one solves
-
-For each pattern you listed, what would have to be true about the requirements
-for that pattern to be the right call? One sentence each, not in terms of
-"flexibility".
-
-### Which of those problems exist here
-
-For each pattern, does the problem it solves exist in this codebase? Point at
-the code that settles it.
+- **Strategy:** `NotificationStrategy`, `EmailNotificationStrategy`, and `NotificationHub`.
+- **Observer:** `NotificationHub`, `NotificationSubscriber`, and `OutboxSubscriber`.
+- **Factory:** `NotifierFactory.createStrategy`.
+- **Singleton:** `NotifierFactory.getInstance`.
 
 ### The simpler structure
 
-**Your proposal.** What replaces `notify/`. Sketch the classes and the one
-method that matters.
+**Your proposal.** Fold strategy, message, and factory into `Notification`.
+`EmailNotification` implements `Notification`. Decommission `NotifierFactory`.
 
-**What stays the same.** The tested behavior it must still produce, named
-precisely enough that a reader can check it against the shipped tests.
-
-**What you would keep, if anything.** If you would keep one interface, say
-which and why. "None of it" is a fine answer if you can defend it.
-
-### What would bring each layer back
-
-For at least two of the layers you would remove, what requirement, if it
-arrived next sprint, would make that layer the right structure? Be specific
-about the requirement, not about the pattern.
-
-**Misuse or anti-pattern?** Say which this is and why the distinction matters.
+**What stays the same.** Everything else stays the same.
 
 ---
 
