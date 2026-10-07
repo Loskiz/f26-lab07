@@ -50,10 +50,31 @@ without claiming it is the only desirable policy.
 
 ### The directive
 
-**The refactor and the exact directive.** Name the refactor (one from the menu
-in the handout) and paste the directive you gave the agent, including the scope
-you set, meaning which files and packages were in bounds, which were not, and
-one line on why the boundary sits where it does.
+**The refactor and the exact directive.** Extract a class per booking type,
+with shared methods for reused workflow operations. Remove the repeated type
+conditionals from `submit`, `cancel`, `priceOf`, and `describe` while preserving
+the public API and existing behavior.
+
+The user gave this directive before characterization or production changes:
+
+> Refactor the [BookingWorkflow.java](src/main/java/edu/cmu/cs214/scheduling/workflow/BookingWorkflow.java)  to be more readable, extract reused methods. Pin down the recurring booking behavior with characterization tests first (especially boundary cases), and then commit and push, and then execute the refactor; commit and push. Record this directive in the refactor.md, commit and push
+
+**Scope.** Production changes are confined to
+`src/main/java/edu/cmu/cs214/scheduling/workflow/`: `BookingWorkflow` and new
+internal booking-type handlers and shared helper methods. Characterization
+tests go in a new `BookingWorkflowCharacterizationTest` under the matching test
+package. Existing test methods, `domain/`, `notify/`, `pricing/`, `reporting/`,
+the build configuration, and milestones 2 and 3 are outside this change.
+Milestone 1 in this file records the directive, pin, and verified result. This
+boundary keeps the refactor focused on workflow structure and preserves its
+collaborators and callers.
+
+**Order.** Commit and push this directive first. Add the characterization tests
+and update the pin section, run the suite against unchanged production code,
+then commit and push that checkpoint. Only then perform the refactor, verify
+the suite and scope, record the result, and commit and push again. Preserve the
+current recurring endpoint, partial-success, cancellation, and pricing rules,
+including behavior that differs from regular bookings.
 
 ### The result
 
