@@ -13,20 +13,40 @@ Keep it short and specific. Point at methods, call sites, and test names.
 
 ### The pin (write this section before you direct the refactor)
 
-**The pin.** File and test name, plus one sentence naming the method and the
-observable result it pins. Not "recurring bookings work". Green against the
-shipped code, and you did not edit or delete an existing test method to get
-there.
+**The pin (planned).** Proposed file:
+`src/test/java/edu/cmu/cs214/scheduling/workflow/BookingWorkflowCharacterizationTest.java`;
+proposed test: `cancellingMiddleOccurrenceCancelsItAndLaterOccurrencesOnly`.
+It will pin `BookingWorkflow.cancel`: cancelling the middle occurrence of a
+three-week series leaves the first active, cancels the second and third, and
+adds exactly two cancellation notifications in occurrence order, one for each
+newly cancelled occurrence. The shipped 35 tests pass; this additional test has
+not yet been written or run. It and this pin section must be committed before
+the refactor, without editing or deleting any shipped test method.
 
-**Why that one, and does a shipped test already cover it?** Of everything
-`BookingWorkflow` does, why is this the behavior worth a test? If something
-shipped comes close, say what your pin adds. If nothing does, say how you
-checked.
+**Why that one, and does a shipped test already cover it?** The strongest gaps
+cluster around recurring behavior: partial submission, the scope of
+cancellation, series-wide pricing, and endpoint conflicts. Recurrence makes a
+single booking ID stand for decisions about an entire series. Forward
+cancellation is the preferred pin because it captures a substantial business
+decision through stored state and notifications. Endpoint conflicts are another
+strong candidate, especially if overlap validation is shared during extraction,
+but forward cancellation is easier to explain as a choice between cancelling
+one occurrence, the remaining series, or the whole series.
 
-**What a regeneration would do differently here.** Suppose someone
-threw this class away and regenerated it from a one-line description of what a
-booking workflow does. Name the decision that would be made a second time, and
-say which way it would probably go.
+I inspected the shipped tests. In `BookingWorkflowTest`,
+`recurringCancelReleasesTheOccurrence` cancels only the last occurrence and
+asserts that cancellation succeeds and that occurrence is cancelled. That case
+cannot distinguish cancelling one occurrence from cancelling it and everything
+after it. No shipped test selects a middle occurrence and checks the earlier
+occurrence, later occurrences, and cancellation notifications together.
+
+**What a regeneration would do differently here.** Regenerating from "a room
+booking workflow" would require choosing the scope of recurring cancellation
+again. Since `cancel` accepts one booking ID, a fresh implementation would
+plausibly cancel only that occurrence. The current implementation instead
+cancels that occurrence and all later active occurrences in the same series,
+while preserving earlier ones. The pin will record this existing behavior
+without claiming it is the only desirable policy.
 
 ### The directive
 
