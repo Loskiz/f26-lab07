@@ -13,25 +13,43 @@ Keep it short and specific. Point at methods, call sites, and test names.
 
 ### The pin (write this section before you direct the refactor)
 
-**The pin (planned).** Proposed file:
+**The pin.** File:
 `src/test/java/edu/cmu/cs214/scheduling/workflow/BookingWorkflowCharacterizationTest.java`;
-proposed test: `cancellingMiddleOccurrenceCancelsItAndLaterOccurrencesOnly`.
-It will pin `BookingWorkflow.cancel`: cancelling the middle occurrence of a
+primary test: `cancellingMiddleOccurrenceCancelsItAndLaterOccurrencesOnly`.
+It pins `BookingWorkflow.cancel`: cancelling the middle occurrence of a
 three-week series leaves the first active, cancels the second and third, and
 adds exactly two cancellation notifications in occurrence order, one for each
-newly cancelled occurrence. The shipped 35 tests pass; this additional test has
-not yet been written or run. It and this pin section must be committed before
-the refactor, without editing or deleting any shipped test method.
+newly cancelled occurrence; another series remains active. Before any production
+change, `mvn -B test` passed all 55 tests: the shipped 35 plus 20 characterization
+cases. No existing test method or production file was edited. This test file and
+pin section are the checkpoint committed and pushed before the refactor.
+
+Additional tests in the same file pin the boundary cases requested in the
+directive:
+
+| Test | Observable behavior pinned |
+| --- | --- |
+| `recurringConflictsIncludeTouchingEndpointsButExcludeGaps` (6 cases) | Both touching endpoints conflict; one-minute gaps do not; overlapping and identical slots are skipped without new bookings or notifications. |
+| `recurringOccurrenceLimitsAreInclusive` (2 cases) | One and 26 occurrences are accepted, stored, numbered, and notified. |
+| `invalidOccurrenceCountsRejectWithoutConsumingIds` (3 cases) | Negative, zero, and 27 occurrences reject with the existing messages and no side effects or consumed IDs. |
+| `partiallyConflictingSeriesKeepsOriginalWeekNumbersAndNotifiesOnlyBookedSlots` | A blocked middle week is skipped; successful weeks retain indices 1 and 3, their descriptions, and ordered confirmations. |
+| `fullySkippedSeriesConsumesASeriesIdButNoBookingIdAndSendsNothing` | A fully conflicted request rejects, reports its skipped slot, consumes a series ID, and sends nothing. |
+| `recurringSubmissionIgnoresCancelledRoomBookings` | A cancelled booking no longer conflicts. |
+| `recurringSubmissionAllowsAMemberAlreadyBookedInAnotherRoom` | Recurring requests allow the cross-room member conflict that regular requests reject. |
+| `recurringValidationChecksMemberThenCapacityThenOccurrenceCount` | Rejection precedence stays member, capacity, then occurrence count. |
+| `cancellingFirstOccurrenceCancelsTheWholeSeriesInDateOrder` | Cancelling the first occurrence releases the whole series and sends ordered cancellation messages. |
+| `cancellationSkipsCancelledOccurrencesAndRepeatedCallsDoNotNotify` | Already cancelled occurrences are skipped; cancelling the same occurrence again returns false and sends nothing. |
+| `everyOccurrenceIncludingCancelledOnesPricesTheRemainingActiveSeries` | Every occurrence ID, including cancelled ones, returns the remaining active series total; a fully cancelled series costs zero. |
 
 **Why that one, and does a shipped test already cover it?** The strongest gaps
 cluster around recurring behavior: partial submission, the scope of
 cancellation, series-wide pricing, and endpoint conflicts. Recurrence makes a
 single booking ID stand for decisions about an entire series. Forward
 cancellation is the preferred pin because it captures a substantial business
-decision through stored state and notifications. Endpoint conflicts are another
-strong candidate, especially if overlap validation is shared during extraction,
-but forward cancellation is easier to explain as a choice between cancelling
-one occurrence, the remaining series, or the whole series.
+decision through stored state and notifications. The additional endpoint tests
+protect the differing overlap rules when validation is extracted into helpers.
+The primary cancellation pin makes the choice between cancelling one
+occurrence, the remaining series, or the whole series easy to explain.
 
 I inspected the shipped tests. In `BookingWorkflowTest`,
 `recurringCancelReleasesTheOccurrence` cancels only the last occurrence and
@@ -45,7 +63,7 @@ booking workflow" would require choosing the scope of recurring cancellation
 again. Since `cancel` accepts one booking ID, a fresh implementation would
 plausibly cancel only that occurrence. The current implementation instead
 cancels that occurrence and all later active occurrences in the same series,
-while preserving earlier ones. The pin will record this existing behavior
+while preserving earlier ones. The pin records this existing behavior
 without claiming it is the only desirable policy.
 
 ### The directive
